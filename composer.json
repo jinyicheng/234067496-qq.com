@@ -1,0 +1,30 @@
+{
+    "name": "jinyicheng/cloopen",
+    "description": "容联云，容联短信",
+    "keywords": [
+        "cloopen",
+        "thinkphp5",
+        "thinkphp6"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "jinyicheng",
+            "email": "234067496@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "ext-redis": "*",
+        "jinyicheng/redis": "^2.0",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-fileinfo": "*",
+        "ext-openssl": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "jinyicheng\\cloopen\\": "src/"
+        }
+    }
+}
