@@ -69,14 +69,14 @@ class Sms
     public function sendCaptcha($mobile, $captcha, $scene_id = 'captcha', $captcha_template_id = null, $captcha_expires_minutes = null, $captcha_send_interval_seconds = null)
     {
         if (is_null($captcha_template_id)) {
-            if (!isset($options['captcha_template_id'])) {
+            if (!isset($this->options['captcha_template_id'])) {
                 throw new CloopenException('配置下没有找到captcha_template_id设置', 510010);
             } else {
                 $captcha_template_id = $this->options['captcha_template_id'];
             }
         }
         if (is_null($captcha_expires_minutes)) {
-            if (!isset($options['captcha_expires_minutes'])) {
+            if (!isset($this->options['captcha_expires_minutes'])) {
                 throw new CloopenException('配置下没有找到captcha_expires_minutes设置', 510011);
             } else {
                 $captcha_expires_minutes = $this->options['captcha_expires_minutes'];
@@ -160,11 +160,11 @@ class Sms
         /**
          * 生成请求url
          */
-        $url = 'https://' . $this->options['ServerIP'] . ':' . $this->options['server_port'] . '/' . $this->options['soft_version'] . '/Accounts/' . $this->options['account_sid'] . '/SMS/TemplateSMS?sig=' . $sig;
+        $url = 'https://' . $this->options['server_ip'] . ':' . $this->options['server_port'] . '/' . $this->options['soft_version'] . '/Accounts/' . $this->options['account_sid'] . '/SMS/TemplateSMS?sig=' . $sig;
         /**
          * 生成授权：主帐户Id + 英文冒号 + 时间戳。
          */
-        $authorization = base64_encode($this->options['account_sid'] . ":" . $this->options['batch']);
+        $authorization = base64_encode($this->options['account_sid'] . ":" . $batch);
         /**
          * 生成头
          */
