@@ -35,7 +35,6 @@ class Sms
         if (!isset($options['account_sid'])) throw new CloopenException('配置下没有找到account_sid设置', 510005);
         if (!isset($options['account_token'])) throw new CloopenException('配置下没有找到account_token设置', 510006);
         if (!isset($options['app_id'])) throw new CloopenException('配置下没有找到app_id设置', 510007);
-        if (!isset($options['body_type'])) throw new CloopenException('配置下没有找到body_type设置', 510007);
         if (!isset($options['enable_log'])) throw new CloopenException('配置下没有找到enable_log设置', 510008);
         //if (!isset($options['app_token'])) throw new InvalidArgumentException('配置下没有找到app_token设置');
         if (!isset($options['app_redis_cache_db_number'])) throw new CloopenException('配置下没有找到app_redis_cache_db_number设置', 510008);
@@ -170,8 +169,8 @@ class Sms
          * 生成头
          */
         $headers = [
-            'Accept:application/' . $this->options['body_type'],
-            'Content-Type:application/' . $this->options['body_type'] . ';charset=utf-8',
+            'Accept:application/json',
+            'Content-Type:application/json;charset=utf-8',
             'Authorization:' . $authorization
         ];
         /**
