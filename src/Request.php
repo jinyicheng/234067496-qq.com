@@ -2,6 +2,8 @@
 
 namespace jinyicheng\cloopen;
 
+use jinyicheng\cloopen\exceptions\CloopenException;
+
 class Request
 {
     /**

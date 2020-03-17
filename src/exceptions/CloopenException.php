@@ -1,7 +1,7 @@
 <?php
 
 
-namespace jinyicheng\cloopen;
+namespace jinyicheng\cloopen\exceptions;
 
 use Exception;
 

@@ -3,6 +3,7 @@
 namespace jinyicheng\cloopen;
 
 use BadFunctionCallException;
+use jinyicheng\cloopen\exceptions\CloopenException;
 use jinyicheng\redis\Redis;
 
 class Sms
@@ -22,7 +23,7 @@ class Sms
 
     /**
      * @param array $options
-     * @return self
+     * @return mixed
      * @throws CloopenException
      */
     public static function getInstance($options = [])
@@ -47,81 +48,6 @@ class Sms
     }
 
     /**
-     * 生成随机验证码
-     * @return int
-     */
-    public static function createCaptcha()
-    {
-        /* 生成随机数 */
-        return (int)mt_rand(100000, 999999);
-    }
-
-    /**
-     * 发送短信验证码
-     * @param $mobile
-     * @param $captcha
-     * @param string $scene_id
-     * @param $captcha_template_id
-     * @param null $captcha_expires_minutes
-     * @return bool
-     * @throws CloopenException
-     */
-    public function sendCaptcha($mobile, $captcha, $scene_id = 'captcha', $captcha_template_id = null, $captcha_expires_minutes = null, $captcha_send_interval_seconds = null)
-    {
-        if (is_null($captcha_template_id)) {
-            if (!isset($this->options['captcha_template_id'])) {
-                throw new CloopenException('配置下没有找到captcha_template_id设置', 510010);
-            } else {
-                $captcha_template_id = $this->options['captcha_template_id'];
-            }
-        }
-        if (is_null($captcha_expires_minutes)) {
-            if (!isset($this->options['captcha_expires_minutes'])) {
-                throw new CloopenException('配置下没有找到captcha_expires_minutes设置', 510011);
-            } else {
-                $captcha_expires_minutes = $this->options['captcha_expires_minutes'];
-            }
-        }
-        $this->send([$mobile], [$captcha, $captcha_expires_minutes . '分钟'], $captcha_template_id);
-        Redis::db($this->options['app_redis_cache_db_number'])->setex(
-            $this->getCaptchaKey($mobile, $scene_id),
-            $captcha_expires_minutes * 60,
-            $captcha
-        );
-        return true;
-    }
-
-    /**
-     * 检查验证码是否正确
-     * @param $mobile
-     * @param $captcha
-     * @param string $scene_id
-     * @return bool
-     */
-    public function checkCaptcha($mobile, $captcha, $scene_id = 'captcha')
-    {
-        $redis = Redis::db($this->options['app_redis_cache_db_number']);
-        $key = $this->getCaptchaKey($mobile, $scene_id);
-        if ($redis->get($key) === $captcha) {
-            $redis->del($key);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * 获取验证码redis存储的key
-     * @param int $mobile
-     * @param string $scene_id
-     * @return string
-     */
-    public function getCaptchaKey($mobile, $scene_id = 'captcha')
-    {
-        return $this->options['app_redis_cache_key_prefix'] . $mobile . ':' . $scene_id;
-    }
-
-    /**
      * 发送模板消息
      * @param array $mobiles
      * @param array $datas
@@ -129,7 +55,6 @@ class Sms
      * @param null $request_id
      * @param null $sub_append
      * @return array
-     * @throws CloopenException
      */
     public function send(array $mobiles, array $datas, $template_id, $request_id = null, $sub_append = null)
     {
