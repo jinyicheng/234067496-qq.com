@@ -1,11 +1,12 @@
 <?php
 
-namespace jinyicheng\cloopen;
+namespace jinyicheng\cloopen\extensions;
 
 use BadFunctionCallException;
 use jinyicheng\cloopen\exceptions\CloopenException;
 use jinyicheng\cloopen\exceptions\SmsCaptchaException;
 use jinyicheng\cloopen\exceptions\SmsCaptchaValidateException;
+use jinyicheng\cloopen\Sms;
 use jinyicheng\redis\Redis;
 
 
