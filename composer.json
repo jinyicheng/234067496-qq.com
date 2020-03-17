@@ -17,6 +17,7 @@
         "php": ">=7.1.0",
         "ext-redis": "*",
         "jinyicheng/redis": "^2.0",
+        "jinyicheng/toolbox": "^1.0",
         "ext-curl": "*",
         "ext-json": "*",
         "ext-fileinfo": "*",

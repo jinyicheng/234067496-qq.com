@@ -6,8 +6,8 @@ use BadFunctionCallException;
 use jinyicheng\cloopen\exceptions\CloopenException;
 use jinyicheng\cloopen\exceptions\SmsCaptchaException;
 use jinyicheng\cloopen\exceptions\SmsCaptchaValidateException;
-use jinyicheng\cloopen\Sms;
 use jinyicheng\redis\Redis;
+use jinyicheng\toolbox\Time;
 
 
 class SmsCaptcha
@@ -38,7 +38,7 @@ class SmsCaptcha
     private $expires = 30;
 
     /**
-     * @var int 有效时长（分钟）
+     * @var int 间隔时常（秒）
      */
     private $interval = 60;
 
@@ -48,9 +48,9 @@ class SmsCaptcha
     private $single_mobile_daily_send_maximum = 10;
 
     /**
-     * @var string|array|int 手机号码
+     * @var string|int 手机号码
      */
-    private $mobiles = null;
+    private $mobile = null;
 
     /**
      * 设置场景ID
@@ -122,12 +122,12 @@ class SmsCaptcha
 
     /**
      * 设置手机号码
-     * @param string|int|array $mobiles
+     * @param string|int $mobile
      * @return $this
      */
-    public function setMobiles($mobiles)
+    public function setMobile($mobile)
     {
-        $this->mobiles = $mobiles;
+        $this->mobile = $mobile;
         return $this;
     }
 
@@ -154,6 +154,7 @@ class SmsCaptcha
         if (!isset($options['app_redis_cache_db_number'])) throw new CloopenException('配置下没有找到app_redis_cache_db_number设置', 510008);
         if (!isset($options['app_redis_cache_key_prefix'])) throw new CloopenException('配置下没有找到app_redis_cache_key_prefix设置', 510009);
         if (!extension_loaded('redis')) throw new BadFunctionCallException('Redis扩展不支持', 500);
+        $this->options = $options;
     }
 
     /**
@@ -171,7 +172,7 @@ class SmsCaptcha
         if (is_null($this->captcha)) {
             throw new SmsCaptchaException('请设置验证码', 510014);
         }
-        if (is_null($this->mobiles)) {
+        if (is_null($this->mobile)) {
             throw new SmsCaptchaException('请设置接收手机号码', 510015);
         }
     }
@@ -192,17 +193,14 @@ class SmsCaptcha
         /**
          * 根据手机号码的参数进行形态转换
          */
-        $mobile = (is_array($this->mobiles)) ? $this->mobiles : [$this->mobiles];
-
+        $key = $this->getKey();
         $Redis = Redis::db($this->options['app_redis_cache_db_number']);
-
-        $key = $this->getCaptchaKey($mobile, $this->scene_id);
         /**
          * 验证间隔时长
          */
         if ($this->interval > 0) {
             $ttl = $Redis->ttl($key . ':interval_lock');
-            if ($ttl !== false) {
+            if ($ttl !== -2) {
                 throw new SmsCaptchaValidateException('短信验证码获取过于频繁，请' . $ttl . '秒后再试', 410016);
             }
         }
@@ -210,14 +208,19 @@ class SmsCaptcha
          * 单一手机号每日发送上限
          */
         if ($this->single_mobile_daily_send_maximum > 0) {
-            if ($Redis->incr($key . ':' . date('Ymd') . ':interval_lock') > $this->single_mobile_daily_send_maximum) {
+            $mobile_daily_send_count_key = $key . ':' . date('Ymd') . ':send';
+            $mobile_daily_send_count = $Redis->incr($mobile_daily_send_count_key);
+            if ($mobile_daily_send_count == 1) {
+                $Redis->expire($mobile_daily_send_count_key,Time::nowTillTomorrowMorningLeftSenconds());
+            }
+            if ($mobile_daily_send_count > $this->single_mobile_daily_send_maximum) {
                 throw new SmsCaptchaValidateException('短信验证码获取次数已到达上限', 410017);
             }
         }
         /**
          * 发送短信（发送失败则自动异常抛出并终止）
          */
-        Sms::getInstance($this->options)->send($mobile, [$this->captcha, $this->expires . '分钟'], $this->template_id);
+        Sms::getInstance($this->options)->send([$this->mobile], [$this->captcha, $this->expires . '分钟'], $this->template_id);
         /**
          * 设置间隔时长
          */
@@ -248,7 +251,7 @@ class SmsCaptcha
          * 通过redis对验证码进行校对
          */
         $redis = Redis::db($this->options['app_redis_cache_db_number']);
-        $key = $this->getCaptchaKey($this->mobiles, $this->scene_id);
+        $key = $this->getKey($this->mobile, $this->scene_id);
         if ($redis->get($key) === $this->captcha) {
             $redis->del($key);
             return true;
@@ -263,8 +266,8 @@ class SmsCaptcha
      * @param string $scene_id
      * @return string
      */
-    public function getCaptchaKey($mobile, $scene_id)
+    private function getKey()
     {
-        return $this->options['app_redis_cache_key_prefix'] . $mobile . ':' . $scene_id;
+        return $this->options['app_redis_cache_key_prefix'] . $this->mobile . ':' . $this->scene_id . ':captcha';
     }
 }
