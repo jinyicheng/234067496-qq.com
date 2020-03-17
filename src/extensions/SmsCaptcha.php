@@ -7,6 +7,7 @@ use jinyicheng\cloopen\exceptions\CloopenException;
 use jinyicheng\cloopen\exceptions\SmsCaptchaException;
 use jinyicheng\cloopen\exceptions\SmsCaptchaValidateException;
 use jinyicheng\redis\Redis;
+use jinyicheng\cloopen\Sms;
 use jinyicheng\toolbox\Time;
 
 
@@ -158,11 +159,17 @@ class SmsCaptcha
     }
 
     /**
-     * 检测参数是否可用
+     * 发送短信验证码
+     * @return void
+     * @throws CloopenException
      * @throws SmsCaptchaException
+     * @throws SmsCaptchaValidateException
      */
-    private function checkPropertyIsAvailable()
+    public function send()
     {
+        /**
+         * 检测参数是否可用
+         */
         if (is_null($this->scene_id)) {
             throw new SmsCaptchaException('请设置场景ID', 510012);
         }
@@ -175,21 +182,6 @@ class SmsCaptcha
         if (is_null($this->mobile)) {
             throw new SmsCaptchaException('请设置接收手机号码', 510015);
         }
-    }
-
-    /**
-     * 发送短信验证码
-     * @return bool
-     * @throws CloopenException
-     * @throws SmsCaptchaException
-     * @throws SmsCaptchaValidateException
-     */
-    public function send()
-    {
-        /**
-         * 检测参数是否可用
-         */
-        $this->checkPropertyIsAvailable();
         /**
          * 根据手机号码的参数进行形态转换
          */
@@ -233,20 +225,27 @@ class SmsCaptcha
             $this->expires * 60,
             $this->captcha
         );
-        return true;
     }
 
     /**
      * 检查验证码是否正确
-     * @return bool
      * @throws SmsCaptchaException
+     * @throws SmsCaptchaValidateException
      */
     public function check()
     {
         /**
          * 检测参数是否可用
          */
-        $this->checkPropertyIsAvailable();
+        if (is_null($this->scene_id)) {
+            throw new SmsCaptchaException('请设置场景ID', 510012);
+        }
+        if (is_null($this->captcha)) {
+            throw new SmsCaptchaException('请设置验证码', 510014);
+        }
+        if (is_null($this->mobile)) {
+            throw new SmsCaptchaException('请设置接收手机号码', 510015);
+        }
         /**
          * 通过redis对验证码进行校对
          */
@@ -254,9 +253,8 @@ class SmsCaptcha
         $key = $this->getKey($this->mobile, $this->scene_id);
         if ($redis->get($key) === $this->captcha) {
             $redis->del($key);
-            return true;
         } else {
-            return false;
+            throw new SmsCaptchaValidateException('短信验证码错误', 410018);
         }
     }
 
