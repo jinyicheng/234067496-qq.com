@@ -55,6 +55,7 @@ class Sms
      * @param null $request_id
      * @param null $sub_append
      * @return array
+     * @throws CloopenException
      */
     public function send(array $mobiles, array $datas, $template_id, $request_id = null, $sub_append = null)
     {
